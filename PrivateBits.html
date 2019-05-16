@@ -15,8 +15,10 @@ body{
 </style>
 </head>
 <body>
-<center>
 
+<input id="allowIncomingCheckbox" type="checkbox">Accept Incoming Connections</input>
+<div id="blockedAttemptsDiv" style = "color: red; display: inline-block;"></div>
+<center>
 <div id="pageContent">
 <div style="background-color: #595; color: #222;"><h1>FT Peer To Peer Chat</h1></div><br>
 
@@ -28,7 +30,9 @@ Refresh the page to generate a new ID.
 <br>
 Enter your friend's ID and press connect:<br>
 <input id="targetIDinput">
-<button id="connectButton" onclick="connect()">Connect</button>
+<button id="connectButton" onclick="connect()">Connect</button><br>
+Pressing connect will open your chat to incoming connections.<br>
+When a successful connection is made, incoming connections will be disabled again.
 <hr><br>
 <img src="ftlogo.png">
 
@@ -43,6 +47,9 @@ var pageContent = document.getElementById("pageContent");
 // the id of the connected peer. The initial connection is only one way.
 // we use 'remote' to check for 2 way connection and only connect back once
 var remote="disconnected";
+
+// keep track of the number of blocked connection attempts.
+var blockedAttempts = 0;
 
 
 //§§§§§§§§§§-----------Create A Peer ID------------§§§§§§§§§§§§§§§§§
@@ -59,30 +66,54 @@ peer.on('open', function(id) {
 //§§§§§§§§§§§§------------Manage connection and handle network data-----------§§§§§§§§§§§§§§§§
 // Outgoing connection is created when 'connect' button is pressed
 function connect(){
+	document.getElementById("allowIncomingCheckbox").checked = true;
 	var targetIDinput = document.getElementById("targetIDinput");
 	var targetID = targetIDinput.value;
 	remote = targetID;
 	conn = peer.connect(remote);
-	//registerEnterKey(conn);
 }
 
-// When incoming connection is recieved create message handlers
+// When incoming connection attempt is recieved create message handlers
 peer.on('connection', function(conn) {
+	var allowIncoming = document.getElementById("allowIncomingCheckbox").checked;
+	// If not allowing connections, close incoming connection, notify user of blocked attempt.
+	if (allowIncoming != true){
+		conn.close();
+		blockedAttempts++;
+		displayBlockedAttempts();
+		return;
+	}
+
 	//If we only have a one way connection, connect back to the peer
 	if (remote=="disconnected"){
 		remote = conn.peer;
 		conn = peer.connect(remote);
 	}
-	//when message is recieved, post it to the output
+	
+	// On successful connection:
 	conn.on('open', function() {
+		//Disallow future connections
+		document.getElementById("allowIncomingCheckbox").checked = false;
+	
+		//Register the Enter key to send messages.
 		registerEnterKey(conn);
+		
+		//when a message is recieved, post it to the output
 		conn.on('data', function(data) {
 			post(data, 'pink');
 		});
+		
 	});
+	
 	createChatInterface();
 	post("-----Connection Established------", 'white');
 });
+
+//When an incoming connection attempt is blocked, update the on screen count
+function displayBlockedAttempts(){
+	$("#blockedAttemptsDiv").html("  " + blockedAttempts + " connection attempt(s) blocked. Check the box to the left to allow incoming connections.");
+	$("#blockedAttemptsDiv").fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
+}
 
 // this prints a message to the output div, in the specified color
 function post(message, color){
