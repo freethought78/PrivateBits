@@ -1,0 +1,127 @@
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@0.3.20/dist/peer.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<style>
+body{
+	background-color:#222;
+	color: white;
+}
+
+.textwindow{
+	text-align: left;
+	background-color:#555;
+}
+</style>
+</head>
+<body>
+<center>
+
+<div id="pageContent">
+<div style="background-color: #595; color: #222;"><h1>FT Peer To Peer Chat</h1></div><br>
+
+Your ID:
+<div id="idDiv"></div>
+
+Refresh the page to generate a new ID.
+<hr>
+<br>
+Enter your friend's ID and press connect:<br>
+<input id="targetIDinput">
+<button id="connectButton" onclick="connect()">Connect</button>
+<hr><br>
+<img src="ftlogo.png">
+
+</div>
+</center>
+</body>
+
+<script>
+// create a handler to a top-level outer Div, whose contents can be replaced later.
+var pageContent = document.getElementById("pageContent");
+
+// the id of the connected peer. The initial connection is only one way.
+// we use 'remote' to check for 2 way connection and only connect back once
+var remote="disconnected";
+
+
+//§§§§§§§§§§-----------Create A Peer ID------------§§§§§§§§§§§§§§§§§
+//Register as a Peer on the PeerJS cloud
+var peer = new Peer();
+
+//When peer is registered, add the peer ID to the appropriate Div
+peer.on('open', function(id) {
+	var idDiv = document.getElementById("idDiv");
+	idDiv.innerHTML += id;
+});
+
+
+//§§§§§§§§§§§§------------Manage connection and handle network data-----------§§§§§§§§§§§§§§§§
+// Outgoing connection is created when 'connect' button is pressed
+function connect(){
+	var targetIDinput = document.getElementById("targetIDinput");
+	var targetID = targetIDinput.value;
+	remote = targetID;
+	conn = peer.connect(remote);
+	//registerEnterKey(conn);
+}
+
+// When incoming connection is recieved create message handlers
+peer.on('connection', function(conn) {
+	//If we only have a one way connection, connect back to the peer
+	if (remote=="disconnected"){
+		remote = conn.peer;
+		conn = peer.connect(remote);
+	}
+	//when message is recieved, post it to the output
+	conn.on('open', function() {
+		registerEnterKey(conn);
+		conn.on('data', function(data) {
+			post(data, 'pink');
+		});
+	});
+	createChatInterface();
+	post("-----Connection Established------", 'white');
+});
+
+// this prints a message to the output div, in the specified color
+function post(message, color){
+	$("#textout").append("<div style='color: "+color+"'>"+message+"</div>");
+	scrollbottom();
+}
+
+//§§§§§§§§§§§§--------------Chat Interface----------§§§§§§§§§§§§
+
+// This replaces the contents of the page with the chat console interface
+function createChatInterface(){
+	pageContent.innerHTML = ""+
+	"<div id='textout' class='textwindow' style='overflow-y: auto; height:90%; border-style: solid; white-space:pre;'></div>"+
+	"<input id='chatInput' class='textwindow' type='text' style='margin-top: 10px; width: 100%;'>";
+}
+
+// this registers the 'enter' key to send a message to the peer
+function registerEnterKey(conn){
+	$(document).keypress(function(e) {
+		if(e.which == 13) {
+			submit(conn);
+		}
+	});
+}
+
+// this takes the text from the chat input field and sends the contents to the peer
+function submit(conn){
+	var chatInput = document.getElementById("chatInput");
+	var chatData = chatInput.value;
+	chatInput.value = "";
+	conn.send(chatData);
+	post(chatData, 'skyblue');
+}
+
+// when the output div is full and can be scrolled down,
+// this keeps the output div scrolled to the bottom of the div.
+function scrollbottom(){
+	var div = $("#textout");
+	div.scrollTop(div.prop('scrollHeight'));
+}
+</script>
+</html>
