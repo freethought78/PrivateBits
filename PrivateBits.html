@@ -127,8 +127,10 @@ function post(message, color){
 		$("#textout").append(""+
 			"<div style='color: red;' class='warning'><h1>"+
 			"YOUR PARTNER JUST ATTEMPTED TO SEND MALICIOUS CODE.<BR>" +
-			"THAT ATTEMPT WAS BLOCKED.</h1></div>"+
-		"");
+			"THAT ATTEMPT WAS BLOCKED.</h1></div>");
+		
+		//Scroll to bottom of chat
+		scrollbottom();
 		
 		// Blink the warning message 3 times
 		$(".warning").fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
