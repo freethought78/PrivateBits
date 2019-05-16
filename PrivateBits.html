@@ -103,10 +103,14 @@ peer.on('connection', function(conn) {
 			post(data, 'pink');
 		});
 		
+		//replace connection interface with the chat interface
+		createChatInterface();
+		
+		//notify user that a connection was established
+		post("-----Connection Established------", 'white');
 	});
 	
-	createChatInterface();
-	post("-----Connection Established------", 'white');
+
 });
 
 //When an incoming connection attempt is blocked, update the on screen count
