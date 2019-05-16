@@ -121,7 +121,24 @@ function displayBlockedAttempts(){
 
 // this prints a message to the output div, in the specified color
 function post(message, color){
-	$("#textout").append("<div style='color: "+color+"'>"+message+"</div>");
+	//if an incoming message attempts to close the xmp tag which contains the message
+	//and prevents html from rendering, notify client of malicious code attempt
+	if (/\/xmp/ig.test(message)){
+		$("#textout").append(""+
+			"<div style='color: red;' class='warning'><h1>"+
+			"YOUR PARTNER JUST ATTEMPTED TO SEND MALICIOUS CODE.<BR>" +
+			"THAT ATTEMPT WAS BLOCKED.</h1></div>"+
+		"");
+		
+		// Blink the warning message 3 times
+		$(".warning").fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
+		return;
+	}
+	
+	// if no problems were detected, display the message
+	$("#textout").append("<xmp style='color: "+color+"; font-size: 20px;'>"+message+"</xmp>");
+	
+	// scroll to the bottom of the chat after message is added
 	scrollbottom();
 }
 
