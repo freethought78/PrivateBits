@@ -203,7 +203,6 @@ peer.on('connection', function(conn) {
 	// On successful connection:
 	conn.on('open', function() {
 		//store the remote pgp public key (which was passed in through the connection metadata)
-		console.log(remotepubkey);
 		conn.send({pubkey: pubkey});
 
 		//Disallow future connections
@@ -218,10 +217,10 @@ peer.on('connection', function(conn) {
 			//store the remote pubkey locally
 			if(typeof(data.pubkey) !== "undefined"){
 				remotepubkey = data.pubkey;
-				console.log(remotepubkey);
+				//console.log(remotepubkey);
 			//on normal messages (not containing a remote pubkey) decrypt and display message
 			}else{
-				post(data, 'pink');
+				//post(data, 'pink');
 				post(await decrypt(data), 'pink');
 			}
 		});
