@@ -90,6 +90,48 @@ When a successful connection is made, incoming connections will be disabled agai
 </body>
 
 <script>
+//§§§§§§§§§§§§------------OPENPGPJS Initialization-----------§§§§§§§§§§§§§§§§
+var privkey, pubkey;
+var openpgp = window.openpgp;
+
+
+createKeyPair();
+
+
+async function createKeyPair(){
+	var options = {
+		userIds: [{ name:'PrivateBits'}],
+		curve: "ed25519",                                         
+	};
+
+	await openpgp.generateKey(options).then(async function(key) {
+		privkey = await key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
+		pubkey = await key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+	});
+}
+
+// MUST CALL AS 'await encrypt(message)' in order to get correct results
+// takes in a message and returns encrypted results
+async function encrypt(message) {
+	var encrypted;
+    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
+
+    const options = {
+        message: (await openpgp.message.fromText(message)),       // input as Message object
+        publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for encryption
+        privateKeys: [privKeyObj]                                 // for signing (optional)
+    }
+
+    await openpgp.encrypt(options).then(function(ciphertext){
+		encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+	});
+	
+	return encrypted;
+}
+
+
+// --------------------------------------------------------------------------------
+
 // create a handler to a top-level outer Div, whose contents can be replaced later.
 var pageContent = document.getElementById("pageContent");
 
@@ -164,7 +206,7 @@ peer.on('connection', function(conn) {
 
 //When an incoming connection attempt is blocked, update the on screen count
 function displayBlockedAttempts(){
-	$("#blockedAttemptsDiv").html("  " + blockedAttempts + " connection attempt(s) blocked. Check the box to the left to allow incoming connections.");
+	$("#blockedAttemptsDiv").html(" " + blockedAttempts + " connection attempt(s) blocked. Check the box to the left to allow incoming connections.");
 	$("#blockedAttemptsDiv").fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
 }
 
@@ -212,11 +254,13 @@ function registerEnterKey(conn){
 }
 
 // this takes the text from the chat input field and sends the contents to the peer
-function submit(conn){
+async function submit(conn){
 	var chatInput = document.getElementById("chatInput");
 	var chatData = chatInput.value;
 	chatInput.value = "";
-	conn.send(chatData);
+	var encrypted = await encrypt(chatData);
+	conn.send(encrypted);
+	//conn.send(chatData);
 	post(chatData, 'skyblue');
 }
 
