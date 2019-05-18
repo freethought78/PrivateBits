@@ -91,7 +91,7 @@ When a successful connection is made, incoming connections will be disabled agai
 
 <script>
 //§§§§§§§§§§§§------------OPENPGPJS Initialization-----------§§§§§§§§§§§§§§§§
-var privkey, pubkey;
+var privkey, pubkey, remotepubkey;
 var openpgp = window.openpgp;
 
 
@@ -118,8 +118,7 @@ async function encrypt(message) {
 
     const options = {
         message: (await openpgp.message.fromText(message)),       // input as Message object
-        publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for encryption
-        privateKeys: [privKeyObj]                                 // for signing (optional)
+        publicKeys: (await openpgp.key.readArmored(remotepubkey)).keys, // for encryption
     }
 
     await openpgp.encrypt(options).then(function(ciphertext){
@@ -128,6 +127,26 @@ async function encrypt(message) {
 	
 	return encrypted;
 }
+
+// MUST CALL AS 'await decrypt(message)' in order to get correct results
+// takes in an encrypted message and returns decrypted results.
+async function decrypt(encrypted){
+	var decrypted;
+    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
+
+	const options = {
+		message: (await openpgp.message.readArmored(encrypted)),    // parse armored message
+		publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for verification (optional)
+		privateKeys: [privKeyObj]                                 // for decryption
+	}
+
+	await openpgp.decrypt(options).then(function(plaintext){
+		decrypted = plaintext.data;
+	});
+	
+	return decrypted;
+}
+
 
 
 // --------------------------------------------------------------------------------
@@ -161,7 +180,7 @@ function connect(){
 	var targetIDinput = document.getElementById("targetIDinput");
 	var targetID = targetIDinput.value;
 	remote = targetID;
-	conn = peer.connect(remote);
+	conn = peer.connect(remote/*, {metadata: pubkey}*/);
 }
 
 // When incoming connection attempt is recieved create message handlers
@@ -178,11 +197,15 @@ peer.on('connection', function(conn) {
 	//If we only have a one way connection, connect back to the peer
 	if (remote=="disconnected"){
 		remote = conn.peer;
-		conn = peer.connect(remote);
+		conn = peer.connect(remote, {metadata: pubkey});
 	}
 	
 	// On successful connection:
 	conn.on('open', function() {
+		//store the remote pgp public key (which was passed in through the connection metadata)
+		console.log(remotepubkey);
+		conn.send({pubkey: pubkey});
+
 		//Disallow future connections
 		document.getElementById("allowIncomingCheckbox").checked = false;
 	
@@ -190,8 +213,17 @@ peer.on('connection', function(conn) {
 		registerEnterKey(conn);
 		
 		//when a message is recieved, post it to the output
-		conn.on('data', function(data) {
-			post(data, 'pink');
+		conn.on('data', async function(data){
+			//if the incoming packet contains a the remote pubkey
+			//store the remote pubkey locally
+			if(typeof(data.pubkey) !== "undefined"){
+				remotepubkey = data.pubkey;
+				console.log(remotepubkey);
+			//on normal messages (not containing a remote pubkey) decrypt and display message
+			}else{
+				post(data, 'pink');
+				post(await decrypt(data), 'pink');
+			}
 		});
 		
 		//replace connection interface with the chat interface
