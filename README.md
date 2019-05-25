@@ -29,8 +29,8 @@ All messages are sent back and forth without being sent to any computer other th
 
 
 Background:  
-PrivateBits began as a side project that I began working on in preparation to add networked multiplayer support to a board game engine
-that I am currently working on called Virtual Cardboard. Its free to use for any purpose that you see fit within your local legal restrictions.
+PrivateBits began as a side project that I started working on in preparation to add networked multiplayer support to a board game engine
+that I am currently creating on called Virtual Cardboard. Its free to use for any purpose that you see fit within your local legal restrictions.
 If there is any interest in the project, some of the most likely features that I might add include:
  * Multi-user chat
  * File Transfer
