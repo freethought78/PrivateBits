@@ -37,7 +37,7 @@ If there is any interest in the project, some of the most likely features that I
  * Encrypted Audio and Video support
  
 If you would like to see these or any other features implemented, come and let me know with a message attached to a donation.
-My website is http://freethought.x10host.com/
+My website is http://freethought.x10host.com/  
 Or you can participate in my subreddit at https://www.reddit.com/r/DriftingWithFT
 
 License:
